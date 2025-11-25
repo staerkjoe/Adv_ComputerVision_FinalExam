@@ -5,4 +5,10 @@ roboflow:
   model_format: "yolov8"
 
 data:
-  path: "PlayingCardDetection-1"
+  path: "PlayingCardDetection-1/data.yaml"
+
+model:
+  name: "yolov8n.pt"
+  epochs: 2
+  batch_size: 16
+  img_size: 640
