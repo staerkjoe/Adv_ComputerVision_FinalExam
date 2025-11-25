@@ -1,0 +1,5 @@
+roboflow:
+  workspace: "cv-uoacw"
+  project: "playingcarddetection-tea12-whczv"
+  version: 1
+  model_format: "yolov8"
