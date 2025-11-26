@@ -5,6 +5,8 @@ from pathlib import Path
 from src.data_loader import DataLoader
 from src.model import Model
 import torch
+from ultralytics.utils import (SETTINGS)
+
 
 def load_config():
     config_path = Path(__file__).resolve().parent / "configs" / "config.yaml"
@@ -35,7 +37,8 @@ def main():
     wandb.init(project="yolov8-training", name="run-1")
 
     # Train the model with W&B logging enabled
-    model.train(data=data_path, epochs=epochs, imgsz=imgsz, batch=batch_size, project=wandb_project ,name=wandb_run_name, save_period=-1, exist_ok=True, wandb=True)
+    SETTINGS["wandb"] = True
+    model.train(data=data_path, epochs=epochs, imgsz=imgsz, batch=batch_size, project=wandb_project ,name=wandb_run_name, save_period=-1, exist_ok=True)
 
     # Evaluate model (results will also sync to W&B)
     metrics = model.val()

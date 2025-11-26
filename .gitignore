@@ -2,3 +2,6 @@
 .env
 /PlayingCardDetection-1
 *.pyc
+/wandb
+/yolov8-training
+.env
