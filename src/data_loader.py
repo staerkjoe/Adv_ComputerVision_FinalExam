@@ -1,4 +1,4 @@
-import roboflow
+from roboflow import Roboflow
 import dotenv
 import os
 from pathlib import Path
@@ -7,7 +7,7 @@ class DataLoader:
     def __init__(self, config):
         dotenv.load_dotenv()
         self.config = config
-        self.rf = roboflow.Roboflow(api_key=os.getenv("api_key"))
+        self.rf = Roboflow(api_key=os.getenv("api_key"))
         self.project = self.rf.workspace(config['roboflow']['workspace']).project(config['roboflow']['project'])
         self.version = config['roboflow']['version']
         self.model_format = config['roboflow']['model_format']
