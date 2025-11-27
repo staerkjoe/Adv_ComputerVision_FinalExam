@@ -3,6 +3,7 @@ roboflow:
   project: "playingcarddetection-tea12-whczv"
   version: 1
   model_format: "yolov8"
+  api_key: "YOUR_ROBOFLOW_API_KEY"
 
 data:
   path: "PlayingCardDetection-1/data.yaml"

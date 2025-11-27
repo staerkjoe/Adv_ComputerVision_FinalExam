@@ -40,19 +40,18 @@ def main():
     model = yolo_model.load_model(device=device)  # pass device into load_model
     model.info()    
 
-    # Train model
-    model.train(data=data_path, epochs=epochs, imgsz=imgsz, batch=batch_size, project=wandb_project ,name=wandb_run_name, save_period=-1, freeze=frozen_layers, exist_ok=True)
-
-    # Initialize W&B
-    wandb.init(project="yolov8-training", name="run-1")
+     # Initialize W&B
+    wandb.init(project=wandb_project, name=wandb_run_name)
     SETTINGS["wandb"] = True
+
+    # Train model
+    model.train(data=data_path, epochs=epochs, imgsz=imgsz, batch=batch_size, save_period=-1, freeze=frozen_layers, exist_ok=True)
 
     # Custom Visualization
     visual = Visuals(config, model)
     total_params, trainable_params = visual.count_parameters()
     trainable_param = visual.plot_trainable_parameters(total_params, trainable_params)
     wandb.log({"trainable_parameters_plot": wandb.Image(trainable_param)})
-    
     
 
     # Evaluate model (results will also sync to W&B)
