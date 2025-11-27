@@ -3,6 +3,7 @@ import wandb
 import yaml
 from pathlib import Path
 from src.data_loader import DataLoader
+from src.visuals import Visuals
 from src.model import Model
 import torch
 from ultralytics.utils import (SETTINGS)
@@ -25,29 +26,41 @@ def main():
     wandb_project = config['wandb']['project']
     wandb_run_name = config['wandb']['run_name']
 
+    # Set device
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print("Using device:", device)
 
+    # Load Data
     dataloader = DataLoader(config)
     dataloader.download_dataset()
-    dataloader = dataloader  # ...existing code...
 
+    # Load Model
     model = Model(config)   # pass device into Model
     model = model.load_model(device=device)  # pass device into load_model
-    wandb.init(project="yolov8-training", name="run-1")
 
-    # Train the model with W&B logging enabled
+    # Initialize W&B
+    wandb.init(project="yolov8-training", name="run-1")
     SETTINGS["wandb"] = True
+
+    # Custom Visualization
+    total_params, trainable_params = model.count_parameters()
+    visual = Visuals(config, model)
+    trainable_param = visual.plot_trainable_parameters(total_params, trainable_params)
+    wandb.log({"trainable_parameters_plot": wandb.Image(trainable_param)})
+    
+    # Train model
     model.train(data=data_path, epochs=epochs, imgsz=imgsz, batch=batch_size, project=wandb_project ,name=wandb_run_name, save_period=-1, exist_ok=True)
 
     # Evaluate model (results will also sync to W&B)
     metrics = model.val()
     print(metrics)
 
-    # 5. Optional: upload best model as a W&B artifact
+    # upload best model as a W&B artifact
     artifact = wandb.Artifact("best_model", type="model")
     artifact.add_file(model.ckpt_path)
     wandb.log_artifact(artifact)
+    
+    wandb.finish()
 
 if __name__ == "__main__":
     main()

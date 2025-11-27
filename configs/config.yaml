@@ -9,10 +9,10 @@ data:
 
 model:
   name: "yolov8n.pt"
-  epochs: 50
+  epochs: 100
   batch_size: 16
   imgsz: 640
 
 wandb:
   project: "yolov8-training"
-  run_name: "run-1"
+  run_name: "run-2"
