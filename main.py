@@ -32,20 +32,23 @@ def main():
     print("Using device:", device)
 
     # Load Data
-    dataloader = DataLoader(config)
-    dataloader.download_dataset()
+    from roboflow import Roboflow
+    rf = Roboflow(api_key=config['roboflow']['api_key'])
+    project = rf.workspace(config['roboflow']['workspace']).project(config['roboflow']['project'])
+    version = project.version(config['roboflow']['version'])
+    dataset = version.download(config['roboflow']['model_format'])
 
     # Load Model
     yolo_model = YoloModel(config)
     model = yolo_model.load_model(device=device)  # pass device into load_model
     model.info()    
 
-     # Initialize W&B
-    wandb.init(project=wandb_project, name=wandb_run_name)
-    SETTINGS["wandb"] = True
-
     # Train model
     model.train(data=data_path, epochs=epochs, imgsz=imgsz, batch=batch_size, save_period=-1, freeze=frozen_layers, exist_ok=True)
+
+    # Initialize W&B
+    wandb.init(project=wandb_project, name=wandb_run_name)
+    SETTINGS["wandb"] = True
 
     # Custom Visualization
     visual = Visuals(config, model)
@@ -57,6 +60,7 @@ def main():
     # Evaluate model (results will also sync to W&B)
     metrics = model.val()
     print(metrics)
+    wandb.log(metrics)
 
     # upload best model as a W&B artifact
     artifact = wandb.Artifact("best_model", type="model")
