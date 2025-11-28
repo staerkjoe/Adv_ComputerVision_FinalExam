@@ -46,19 +46,6 @@ def main():
     yolo_model = YoloModel(config)
     model = yolo_model.load_model(device=device)
     model.info()
-
-    # Initialize Visuals class
-    visual = Visuals(config, model.model)
-    
-    # Count parameters BEFORE training (store them for later use)
-    total_params, trainable_params = visual.count_parameters()
-    print(f"\n{'='*50}")
-    print(f"MODEL PARAMETERS")
-    print(f"{'='*50}")
-    print(f"Total parameters:      {total_params:,}")
-    print(f"Trainable parameters:  {trainable_params:,}")
-    print(f"Frozen parameters:     {total_params - trainable_params:,}")
-    print(f"{'='*50}\n")
     
     # Define custom callback to log all visualizations before W&B finishes
     def on_train_end(trainer):
@@ -66,6 +53,11 @@ def main():
         print("\n" + "="*60)
         print("GENERATING CUSTOM VISUALIZATIONS & EXPORTS")
         print("="*60)
+            # Initialize Visuals class
+        visual = Visuals(config, model.model)
+    
+        # Count parameters BEFORE training (store them for later use)
+        total_params, trainable_params = visual.count_parameters()
         
         # Log all visualizations and CSVs
         # Pass the pre-calculated params since trainer.model might be wrapped differently
