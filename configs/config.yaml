@@ -13,7 +13,7 @@ model:
   epochs: 100
   batch_size: 16
   imgsz: 640
-  freeze: 22
+  freeze: 0
 
 wandb:
   project: "yolov8-training"

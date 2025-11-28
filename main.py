@@ -27,6 +27,10 @@ def main():
     wandb_run_name = config['wandb']['run_name']
     frozen_layers = config['model']['freeze']
 
+    # Initialize W&B FIRST
+    wandb.init(project=wandb_project, name=wandb_run_name)
+    SETTINGS["wandb"] = True  # Enable Ultralytics W&B integration
+
     # Set device
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print("Using device:", device)
@@ -40,28 +44,33 @@ def main():
 
     # Load Model
     yolo_model = YoloModel(config)
-    model = yolo_model.load_model(device=device)  # pass device into load_model
-    model.info()    
+    model = yolo_model.load_model(device=device)
+    model.info()
 
-    # Train model
-    model.train(data=data_path, epochs=epochs, imgsz=imgsz, batch=batch_size, save_period=-1, freeze=frozen_layers, exist_ok=True)
-
-    # Initialize W&B
-    wandb.init(project=wandb_project, name=wandb_run_name)
-    SETTINGS["wandb"] = True
-
-    # Custom Visualization
-    visual = Visuals(config, model)
+    # Log custom visualization BEFORE training
+    visual = Visuals(config, model.model)  # Pass model.model (the actual PyTorch model)
     total_params, trainable_params = visual.count_parameters()
-    trainable_param = visual.plot_trainable_parameters(total_params, trainable_params)
-    wandb.log({"trainable_parameters_plot": wandb.Image(trainable_param)})
+    trainable_param_fig = visual.plot_trainable_parameters(total_params, trainable_params)
+    wandb.log({"trainable_parameters_plot": wandb.Image(trainable_param_fig)})
 
-    # Evaluate model (results will also sync to W&B)
+    # Train model (W&B will automatically log metrics during training)
+    results = model.train(
+        data=data_path, 
+        epochs=epochs, 
+        imgsz=imgsz, 
+        batch=batch_size, 
+        save_period=-1, 
+        freeze=frozen_layers, 
+        exist_ok=True,
+        project=wandb_project,  # Optional: specify project
+        name=wandb_run_name      # Optional: specify run name
+    )
+
+    # Evaluate model (metrics will auto-sync to W&B)
     metrics = model.val()
     print(metrics)
-    #wandb.log(metrics)
 
-    # upload best model as a W&B artifact
+    # Upload best model as W&B artifact
     artifact = wandb.Artifact("best_model", type="model")
     artifact.add_file(model.ckpt_path)
     wandb.log_artifact(artifact)
