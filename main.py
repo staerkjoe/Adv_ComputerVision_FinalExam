@@ -27,9 +27,8 @@ def main():
     wandb_run_name = config['wandb']['run_name']
     frozen_layers = config['model']['freeze']
 
-    # Initialize W&B FIRST
-    wandb.init(project=wandb_project, name=wandb_run_name)
-    SETTINGS["wandb"] = True  # Enable Ultralytics W&B integration
+    # Enable Ultralytics W&B integration
+    SETTINGS["wandb"] = True
 
     # Set device
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -47,13 +46,24 @@ def main():
     model = yolo_model.load_model(device=device)
     model.info()
 
-    # Log custom visualization BEFORE training
-    visual = Visuals(config, model.model)  # Pass model.model (the actual PyTorch model)
-    total_params, trainable_params = visual.count_parameters()
-    trainable_param_fig = visual.plot_trainable_parameters(total_params, trainable_params)
-    wandb.log({"trainable_parameters_plot": wandb.Image(trainable_param_fig)})
+    # Define custom callback to log artifacts before W&B finishes
+    def on_train_end(trainer):
+        """Called when training ends, before W&B closes"""
+        # Log custom visualization
+        visual = Visuals(config, trainer.model)
+        total_params, trainable_params = visual.count_parameters()
+        trainable_param_fig = visual.plot_trainable_parameters(total_params, trainable_params)
+        wandb.log({"trainable_parameters_plot": wandb.Image(trainable_param_fig)})
+        
+        # Upload best model as W&B artifact
+        artifact = wandb.Artifact("best_model", type="model")
+        artifact.add_file(trainer.best)  # Path to best model
+        wandb.log_artifact(artifact)
 
-    # Train model (W&B will automatically log metrics during training)
+    # Add callback to model
+    model.add_callback("on_train_end", on_train_end)
+
+    # Train model
     results = model.train(
         data=data_path, 
         epochs=epochs, 
@@ -62,20 +72,13 @@ def main():
         save_period=-1, 
         freeze=frozen_layers, 
         exist_ok=True,
-        project=wandb_project,  # Optional: specify project
-        name=wandb_run_name      # Optional: specify run name
+        project=wandb_project,
+        name=wandb_run_name
     )
 
-    # Evaluate model (metrics will auto-sync to W&B)
+    # Evaluate model
     metrics = model.val()
     print(metrics)
-
-    # Upload best model as W&B artifact
-    artifact = wandb.Artifact("best_model", type="model")
-    artifact.add_file(model.ckpt_path)
-    wandb.log_artifact(artifact)
-    
-    wandb.finish()
 
 if __name__ == "__main__":
     main()
