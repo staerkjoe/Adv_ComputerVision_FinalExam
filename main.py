@@ -6,7 +6,7 @@ from src.data_loader import DataLoader
 from src.visuals import Visuals
 from src.model import YoloModel
 import torch
-from ultralytics.utils import (SETTINGS)
+from ultralytics.utils import SETTINGS
 
 
 def load_config():
@@ -16,6 +16,7 @@ def load_config():
     with config_path.open("r", encoding="utf-8") as file:
         return yaml.safe_load(file)
     
+
 def main():
     config = load_config()
     print("Loaded config:", config)
@@ -46,24 +47,38 @@ def main():
     model = yolo_model.load_model(device=device)
     model.info()
 
-    # Define custom callback to log artifacts before W&B finishes
+    # Initialize Visuals class
+    visual = Visuals(config, model.model)
+    
+    # Define custom callback to log all visualizations before W&B finishes
     def on_train_end(trainer):
         """Called when training ends, before W&B closes"""
-        # Log custom visualization
-        visual = Visuals(config, trainer.model)
+        print("\n=== Generating Custom Visualizations ===")
+        
+        # 1. Log parameter comparison
         total_params, trainable_params = visual.count_parameters()
         trainable_param_fig = visual.plot_trainable_parameters(total_params, trainable_params)
-        wandb.log({"trainable_parameters_plot": wandb.Image(trainable_param_fig)})
+        wandb.log({"model/trainable_parameters": wandb.Image(trainable_param_fig)})
+        print(f"Total parameters: {total_params:,}")
+        print(f"Trainable parameters: {trainable_params:,}")
+        print(f"Frozen parameters: {total_params - trainable_params:,}")
         
-        # Upload best model as W&B artifact
+        # 2. Log all training visualizations (losses, metrics, and Ultralytics plots)
+        visual.log_all_training_visualizations(trainer)
+        
+        # 3. Upload best model as W&B artifact
         artifact = wandb.Artifact("best_model", type="model")
-        artifact.add_file(trainer.best)  # Path to best model
+        artifact.add_file(trainer.best)  # Path to best model weights
         wandb.log_artifact(artifact)
+        print(f"Best model saved as artifact: {trainer.best}")
+        
+        print("=== Custom Visualizations Complete ===\n")
 
     # Add callback to model
     model.add_callback("on_train_end", on_train_end)
 
-    # Train model
+    # Train model (Ultralytics will manage W&B automatically)
+    print("\n=== Starting Training ===")
     results = model.train(
         data=data_path, 
         epochs=epochs, 
@@ -76,9 +91,13 @@ def main():
         name=wandb_run_name
     )
 
-    # Evaluate model
+    # Evaluate model (metrics auto-logged to W&B by Ultralytics)
+    print("\n=== Running Final Validation ===")
     metrics = model.val()
     print(metrics)
+    
+    print("\n=== Training Complete ===")
+
 
 if __name__ == "__main__":
     main()
