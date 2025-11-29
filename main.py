@@ -2,7 +2,6 @@ from pyexpat import model
 import wandb
 import yaml
 from pathlib import Path
-from src.data_loader import DataLoader
 from src.visuals import Visuals
 from src.model import YoloModel
 import torch
@@ -40,7 +39,7 @@ def main():
     rf = Roboflow(api_key=config['roboflow']['api_key'])
     project = rf.workspace(config['roboflow']['workspace']).project(config['roboflow']['project'])
     version = project.version(config['roboflow']['version'])
-    version.download(config['roboflow']['model_format'])
+    version.download(config['roboflow']['model_format'])             
 
     # Load Model
     yolo_model = YoloModel(config)
@@ -128,6 +127,19 @@ def main():
     print("\n" + "="*60)
     print("TRAINING COMPLETE")
     print("="*60 + "\n")
+
+    print("\n" + "="*60)
+    print("Testing on Test Set")
+    print("="*60 + "\n")
+
+    test_metrics = model.val(data=data_path, split="test")
+    print(test_metrics)
+
+    print("\n" + "="*60)
+    print("Testing on Test Set Complete")
+    print("="*60 + "\n")
+
+
 
 
 if __name__ == "__main__":

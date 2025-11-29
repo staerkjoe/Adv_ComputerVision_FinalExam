@@ -1,12 +1,12 @@
 roboflow:
   workspace: "cv-uoacw"
-  project: "playingcarddetection-tea12-whczv"
+  project: "playing-cards-ow27d-5wxe0"
   version: 1
   model_format: "yolov8"
   api_key: ""
 
 data:
-  path: "PlayingCardDetection-1/data.yaml"
+  path: "Playing-Cards-1/data.yaml"
 
 model:
   name: "yolov8n.pt"
