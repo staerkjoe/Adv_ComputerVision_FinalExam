@@ -5,8 +5,16 @@ roboflow:
   model_format: "yolov8"
   api_key: ""
 
+roboflow_inference:
+  workspace: "0lauk0"
+  project: "playing-cards-muou8"
+  version: 1
+  model_format: "yolov8"
+  api_key: "pcHb7siLfJ01eoh5E2bF"
+
 data:
   path: "Playing-Cards-1/data.yaml"
+  path_inference: "inference data/data.yaml"
 
 model:
   name: "yolov8n.pt"
@@ -17,4 +25,6 @@ model:
 
 wandb:
   project: "yolov8-training"
-  run_name: "run-2"
+  run_name: "inference-run_entireModel"
+  artifact_name: "jojs-it-universitetet-i-k-benhavn/yolov8-training/best_model:v11"
+  model_filename: "best.pt"

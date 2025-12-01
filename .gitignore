@@ -5,3 +5,4 @@
 /wandb
 /yolov8-training
 .env
+/inference data
