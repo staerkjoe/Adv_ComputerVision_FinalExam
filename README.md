@@ -6,8 +6,21 @@ The work focuses on how different levels of model adaptation affect performance 
   <img src="https://github.com/user-attachments/assets/c3e57c00-3c09-4e66-8d2e-7480afc3d826" alt="CardDetection" width="600"/>
   </p>
 
+## Tech Stack
+**Core:** Python · PyTorch · Ultralytics YOLOv8
+
+**Data & Experiment Tracking:** Roboflow · Weights & Biases (W&B)
+
+**Visualization & Utilities:** OpenCV · NumPy · Pandas · Matplotlib · Seaborn
+
+**Topics:** Object Detection · Fine-Grained Small-Object Detection · 
+Transfer Learning · Model Fine-Tuning · Layer Freezing
+
 ## Research Goal
-To evaluate how varying the number of trainable layers in a pretrained **YOLOv8n** model impacts detection accuracy, training stability, and error patterns when applied to fine-grained playing card recognition.
+We specifically examine whether increasing the number of trainable 
+layers improves detection performance, and whether full fine-tuning 
+risks **catastrophic forgetting** when adapting a COCO-pretrained 
+model to a narrow, specialized domain.
 
 ---
 
@@ -17,13 +30,17 @@ To evaluate how varying the number of trainable layers in a pretrained **YOLOv8n
 
 ---
 
-## Experimental Setup
-- **Dataset:** ~2,200 images with ~60,000 annotated objects across **53 classes**
-- **Model:** YOLOv8n (pretrained on COCO)
-- **Fine-tuning strategies:**
-  - **Head Only:** Detection head trained, backbone + neck frozen
-  - **Neck + Head:** Backbone frozen, neck and head trained
-  - **Entire Model:** Full end-to-end fine-tuning
+## Methodology
+We fine-tune **YOLOv8n** (pretrained on COCO) on a dataset of ~2,200 
+real-world images containing ~60,000 annotated bounding boxes across 
+**53 classes** (rank and suit combinations plus Joker). All models 
+are trained for 100 epochs with identical hyperparameters, only 
+varying which parts of the network are updated.
+
+Three freezing strategies of increasing capacity are compared:
+  - **Head Only:** Detection head trained, backbone + neck frozen (0.76M parameters)
+  - **Neck + Head:** Backbone frozen, neck and head trained (1.75M parameters)
+  - **Entire Model:** Full end-to-end fine-tuning (3.02M parameters)
 
 ---
 
@@ -31,8 +48,13 @@ To evaluate how varying the number of trainable layers in a pretrained **YOLOv8n
 - **Full model fine-tuning performed best**, achieving:
   - Precision: **0.82**
   - Recall: **0.77**
-  - mAP@50: **0.85**
-  - mAP@50–95: **0.52**
+  - mAP@50: **0.85** - mean Average Precision at IoU threshold 0.5, meaning a 
+    detection counts as correct if it overlaps the ground truth by at least 50%. 
+    Strong overall detection performance at this standard threshold.
+  - mAP@50–95: **0.52** - same metric averaged across stricter IoU thresholds 
+    (0.5 to 0.95), penalizing imprecise bounding boxes more heavily. A solid 
+    result given the difficulty of tightly bounding very small objects.
+
 - Training only the head led to **severe performance degradation**, showing that mid- and low-level features must adapt for fine-grained tasks.
 - No evidence of **catastrophic forgetting** was observed, even when fine-tuning all layers.
 - **Misclassifications predominantly occurred between visually similar symbols**, such as:
